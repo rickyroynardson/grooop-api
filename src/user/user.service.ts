@@ -1,10 +1,14 @@
 import { Injectable, UnprocessableEntityException } from '@nestjs/common';
 import { PrismaService } from 'src/lib/prisma.service';
 import { UpdateCurrentUserDTO } from './dtos/update-current-user.dto';
+import { UpdateCurrentUserPasswordDTO } from './dtos/update-current-user-password.dto';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UserService {
   constructor(private readonly prismaService: PrismaService) {}
+
+  private saltOrRounds = 10;
 
   public async getCurrentUser(userId: string) {
     const user = await this.prismaService.user.findUnique({
@@ -79,6 +83,49 @@ export class UserService {
         email: user.email,
         emailVerifiedAt: user.emailVerifiedAt,
       },
+    };
+  }
+
+  public async updateCurrentUserPassword(
+    userId: string,
+    updateCurrentUserPasswordDTO: UpdateCurrentUserPasswordDTO,
+  ) {
+    const { currentPassword, newPassword, confirmPassword } =
+      updateCurrentUserPasswordDTO;
+
+    const user = await this.prismaService.user.findUnique({
+      where: {
+        userId,
+      },
+    });
+
+    const currentPasswordMatch = bcrypt.compareSync(
+      currentPassword,
+      user.password,
+    );
+
+    if (!currentPasswordMatch) {
+      throw new UnprocessableEntityException('current password is not valid');
+    }
+
+    const isConfirmPasswordMatch = newPassword === confirmPassword;
+    if (!isConfirmPasswordMatch) {
+      throw new UnprocessableEntityException('confirm password is not match');
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, this.saltOrRounds);
+
+    await this.prismaService.user.update({
+      where: {
+        userId,
+      },
+      data: {
+        password: hashedPassword,
+      },
+    });
+
+    return {
+      message: 'update password success',
     };
   }
 }

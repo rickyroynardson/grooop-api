@@ -3,6 +3,7 @@ import { UserService } from './user.service';
 import { AuthGuard } from 'src/auth/auth.guard';
 import { UserID } from './user.decorator';
 import { UpdateCurrentUserDTO } from './dtos/update-current-user.dto';
+import { UpdateCurrentUserPasswordDTO } from './dtos/update-current-user-password.dto';
 
 @Controller('user')
 export class UserController {
@@ -21,5 +22,14 @@ export class UserController {
     @Body() body: UpdateCurrentUserDTO,
   ) {
     return await this.userService.updateCurrentUser(userId, body);
+  }
+
+  @Patch('/me/password')
+  @UseGuards(AuthGuard)
+  public async updateCurrentUserPassword(
+    @UserID() userId: string,
+    @Body() body: UpdateCurrentUserPasswordDTO,
+  ) {
+    return await this.userService.updateCurrentUserPassword(userId, body);
   }
 }
