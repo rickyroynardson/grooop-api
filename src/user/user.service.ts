@@ -128,4 +128,33 @@ export class UserService {
       message: 'update password success',
     };
   }
+
+  public async getCurrentUserGroups(userId: string) {
+    const user = await this.prismaService.user.findUnique({
+      where: {
+        userId,
+      },
+    });
+
+    const groups = await this.prismaService.member.findMany({
+      where: {
+        userId: user.id,
+      },
+    });
+
+    const groupsId = groups.map((group) => group.groupId);
+
+    const joinedGroups = await this.prismaService.group.findMany({
+      where: {
+        AND: {
+          id: {
+            in: groupsId,
+          },
+          deletedAt: null,
+        },
+      },
+    });
+
+    return joinedGroups;
+  }
 }

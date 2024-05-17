@@ -32,4 +32,10 @@ export class UserController {
   ) {
     return await this.userService.updateCurrentUserPassword(userId, body);
   }
+
+  @Get('/me/groups')
+  @UseGuards(AuthGuard)
+  public async getCurrentUserGroups(@UserID() userId: string) {
+    return await this.userService.getCurrentUserGroups(userId);
+  }
 }
